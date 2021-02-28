@@ -1,5 +1,7 @@
 To setup the environmnt on windows to run scripts open vscode as administrator
 #This allows you to run scripts
+#https://stackoverflow.com/questions/4037939/powershell-says-execution-of-scripts-is-disabled-on-this-system
+
 Set-ExecutionPolicy RemoteSigned
 
 #Then activate the environmment:
