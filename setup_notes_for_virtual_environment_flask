@@ -1,0 +1,12 @@
+To setup the environmnt on windows to run scripts open vscode as administrator
+#This allows you to run scripts
+Set-ExecutionPolicy RemoteSigned
+
+#Then activate the environmment:
+.\Scripts\activate
+
+#when you are done you can deactivate:
+ deactivate
+ 
+#Set the policy back to restricted
+Set-ExecutionPolicy Restricted
