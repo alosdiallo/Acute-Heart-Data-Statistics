@@ -1,3 +1,6 @@
+To install mongodb for flask:
+pip install flask-mongoengine
+
 Load data into MongoDB
 mongoimport --type csv -d hf_test -c products --headerline --drop TimetoTreatment.csv
 
