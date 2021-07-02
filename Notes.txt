@@ -4,3 +4,6 @@ pip install flask-mongoengine
 Load data into MongoDB
 mongoimport --type csv -d hf_test -c products --headerline --drop TimetoTreatment.csv
 
+Google JS API's
+https://developers.google.com/chart/interactive/docs/gallery/candlestickchart#example
+
