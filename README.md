@@ -13,5 +13,6 @@ Authors
   
 Copyright © 2018 the President and Fellows of Harvard College.
 
+![UMASS_Med](https://github.com/alosdiallo/Acute-Heart-Data-Statistics/blob/main/images/umassmed-logo.svg)
 ![Blavatnikimmunology](https://github.com/alosdiallo/HMS_Immunology_RNASeq/blob/master/Blavatnikimmunology.jpg)
 ![UMASS_Memorial](https://github.com/alosdiallo/HF_length_of_stay/blob/main/images/logo-umass.png)
