@@ -8,7 +8,7 @@ Authors
 --------------------
     Alos Diallo - Department of Immunology, Harvard Medical School
     Jiaoyuan Elisibeth Sun - Department of Immunology, Harvard Medical School & Department of Emergency Medicine, University of Massachusetts Medical School
-    Chad Darling - Department of Emergency Medicine, University of Massachusetts Medical School & UMASS Memorial Hospital
+    Chad Darling - Department of Emergency Medicine, University of Massachusetts Medical School 
   
   
 Copyright © 2018 the President and Fellows of Harvard College.
