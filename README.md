@@ -1,4 +1,4 @@
-# HF_length_of_stay
+# ADH Stat: Acute Heart Data Statistics
 Repo for the work on the heart failure patient length of stay model and app
 
 
