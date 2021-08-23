@@ -1,0 +1,185 @@
+---
+title: "LOS_test"
+author: "Alos Diallo"
+date: "December 23, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(leaps)
+library(ggplot2)
+library(ROCR)
+library(MASS)
+library(ROCR)
+library(leaps)
+library(randomForest)
+library(caret)
+library(e1071)
+library(kernlab)
+library(class)
+library(readxl)
+library(glmnet)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r data_import and check}
+
+EDHFT <- read_excel("/Users/adiallo/Desktop/HF_Study/EDHFTreatmentAndOutc_DATA_cleaned6-13-2015_clusteringEDdatavsLOS_June13_JES.xlsx")
+attach(EDHFT)
+
+Y = `Total LOS`
+
+X = EDHFT[,2:6]
+X_all = EDHFT[,2:7]
+Log_EDHFT  = log(X_all  + 1)
+pairs(EDHFT)
+data_names = c("")
+
+
+#histograms
+oldpar=par(mfrow=c(2,3))
+par(mar=c(4,4.5,2,1))
+for(i in 2:7){
+  x = as.numeric(unlist(EDHFT[,i]))
+ 
+  hist(x,col = i,main = colnames(EDHFT[i]))
+}
+
+#As you can see the log transformed data looks much more normal
+for(i in 1:6){
+  x = as.numeric(unlist(Log_EDHFT[,i]))
+ 
+  hist(x,col = i,main = colnames(Log_EDHFT[i]))
+}
+
+title(main="Histograms of Data",outer=T)
+par(oldpar) 
+
+Y = Log_EDHFT[,6]
+
+X = Log_EDHFT[,1:5]
+head(Y)
+
+cor_val = NULL
+for(i in 1:6){
+  x = as.numeric(unlist(Log_EDHFT[,i]))
+ 
+  cor_val[i] = cor(x,Y,method="pearson")
+}
+
+#The data on it's own is not very well correlated
+cor_val
+
+
+
+
+```
+
+
+```{r Subset selction}
+
+
+#*********************************
+# Subset selction and ranking
+#*********************************
+#Running regsubsets on the dataset to get a sense for what methods contribute most
+summaryMetrics <- NULL
+whichAll <- list()
+
+  for ( myMthd in c("exhaustive", "backward", "forward") ) {
+    rsRes <- regsubsets(Y ~.,X,method=myMthd,nvmax=ncol(X))
+    summRes <- summary(rsRes)
+    whichAll[[myMthd]] <- summRes$which
+    for ( metricName in c("rsq","rss","adjr2","cp","bic") ) {
+      summaryMetrics <- rbind(summaryMetrics,
+        data.frame(method=myMthd,metric=metricName,
+                  nvars=1:length(summRes[[metricName]]),
+                  value=summRes[[metricName]]))
+    }
+  }
+
+ggplot(summaryMetrics,aes(x=nvars,y=value,shape=method,colour=method)) + geom_path() + geom_point() + facet_wrap(~metric,scales="free",ncol=5) +   theme(legend.position="top")
+
+
+
+
+old.par <- par(mfrow=c(1,3),ps=16,mar=c(5,12,5,1))
+
+  for ( myMthd in names(whichAll) ) {
+    image(1:nrow(whichAll[[myMthd]]),
+          1:ncol(whichAll[[myMthd]]),
+          whichAll[[myMthd]],xlab="N(vars)",ylab="",
+          xaxt="n",yaxt="n",breaks=c(-0.5,0.5,1.5),
+          col=c("white","gray"),main=paste(myMthd))
+    axis(1,1:nrow(whichAll[[myMthd]]),rownames(whichAll[[myMthd]]))
+    axis(2,1:ncol(whichAll[[myMthd]]),colnames(whichAll[[myMthd]]),las=2)
+  }
+par(old.par)
+
+#*********************************
+# Subset selction and ranking
+#*********************************
+
+
+
+```
+
+
+
+
+
+```{r Linear_model}
+X = NULL
+rows = nrow(Log_EDHFT)
+X = matrix(0,nrow = rows,ncol = 6)
+
+
+for(i in 1:6){
+  X[,i] = as.numeric(unlist(Log_EDHFT[,i]))
+}
+
+X = as.data.frame(X)
+
+names(X) = colnames(Log_EDHFT)
+lmTmp <- lm(X$`Total LOS`~X$`Admission SBP`+X$`Admission HR`+X$`Admission BUN`+X$`Admission Creatinine`+X$`Admitted to ICU`,data = X)
+lmTmp
+
+VImp_lm = varImp(lmTmp, scale = FALSE)
+VImp_lm
+plot(VImp_lm) 
+
+errTmp <- sqrt(mean((Y - predict(lmTmp))^2))
+errTmp
+
+anova(lmTmp)
+
+plot(lmTmp)
+X = as.matrix(X)
+Y = as.matrix(Y)
+
+fit <- glmnet(x = X, y = Y, family="gaussian", alpha=0)
+
+
+summary(fit)
+plot(fit)
+
+fit_lasso <- glmnet(x = X, y = Y, family="gaussian", alpha=1,lambda=.2)
+VImp_fit_lasso = varImp(fit_lasso, scale = FALSE,lambda=.2)
+plot(VImp_fit_lasso) 
+
+fit_lasso
+summary(fit_lasso)
+plot(fit_lasso)
+cvLassoRes <- cv.glmnet(X,Y,alpha=1)
+plot(cvLassoRes)
+
+
+cvLassoRes <- cv.glmnet(X,Y,alpha=1,lambda=10^((-120:0)/20))
+plot(cvLassoRes)
+
+
+predict(fit_lasso,type="coefficients",s=cvLassoRes$lambda.1se)
+
+```
+

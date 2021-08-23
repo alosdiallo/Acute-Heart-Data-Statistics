@@ -1,0 +1,335 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+HF data exploration
+
+
+```{r}
+library(corrplot)
+library(psych)
+library(vioplot)
+library(gplots)
+library(readxl)
+library(gridGraphics)
+library(ggpubr)
+library(caret)
+library(leaps)
+library(PerformanceAnalytics)
+library(factoextra)
+library(vcd)
+library(DataExplorer)
+```
+
+The outcome variable is Time to Tx (hrs) and can be obtained from columns 154 and 155. The ID column is column 1.  Catigorical variables are from 2:133, numerical variables run from 134:153.
+```{r}
+TimetoTreatment = NULL
+TimetoTreatment <- read_excel("/Users/adiallo/Desktop/TimetoTreatment.xlsx")
+dim(TimetoTreatment)
+TTData = NULL
+TTData = TimetoTreatment
+
+#Outcome
+names(TTData[,155])
+Y_H = TTData[,155]
+Y_HB = TTData[,154]
+user = TTData[,1]
+
+barplot(table(TTData[,154]), space = 0.8, col = "chartreuse4")
+#gf1 = goodfit(Y_HB, "poisson")
+#rootogram(gf1, xlab = "", rect_gp = gpar(fill = "chartreuse4"))
+```
+
+
+```{r}
+plot_bar(TTData)
+```
+
+
+```{r}
+multi.hist(TTData[,134:154]) 
+multi.hist(log(TTData[,134:154]))
+
+```
+Looking for normality
+```{r}
+plot_qq(log(TTData[,134:154]))
+```
+
+
+```{r}
+#more examples:
+#http://www.sthda.com/english/wiki/visualize-correlation-matrix-using-correlogram
+
+
+#First we have to run the cor function on our data:
+TT_cor_values <-cor(TTData[,134:154],method = "kendall")
+
+#Here is an example with colors and circles
+corrplot(TT_cor_values, method="circle")
+
+#First we have to run the cor function on our data:
+TT_cor_values <-cor(TTData[,134:154],method = "pearson")
+
+#Here is an example with colors and circles
+corrplot(TT_cor_values, method="circle")
+
+chart.Correlation(TTData[,134:154],histogram=TRUE, col="grey10", pch=1, main="HF data")
+```
+
+Working on developing methods
+```{r}
+
+hf_status <- factor(TTData$hf_status)
+Y_HB_T = as.numeric(unlist(Y_HB))
+t_test_data = t.test(Y_HB_T~hf_status)
+wilcox_test = wilcox.test(Y_HB_T~hf_status)
+#t_test_data
+plotmeans(Y_HB_T ~ hf_status, xlab = "Heart Failure Status",ylab = "Time to Treat", main = "Mean Plot Heart Failure Status vs Time to Treat \nwith 95% CI")
+
+model <- lm(Y_HB_T ~ factor(TTData$hf_status), data = TTData)
+anova(model)
+summary(model)$coef
+
+
+
+
+```
+How does what we see translate into a scatter plot.
+```{r}
+plot(Y_HB_T,col = hf_status,ann=FALSE )
+plot(log(Y_HB_T),col = hf_status,ann=FALSE )
+
+#hf_status
+```
+
+abnp2_279,admhr,acreatin2_4d5,abun2_371
+
+Trying to use a function to save plots
+```{r}
+
+plot_maens<-function(numerical_variable = NULL,catigorial_variable = NULL){
+  numerical_variable <- as.numeric(unlist(numerical_variable))
+  catigorial_variable <- factor(catigorial_variable)
+  
+  xtext = paste(names(catigorial_variable),"Status",sep=" ")
+  ytext = names(numerical_variable)
+  plotmeans(Y_HB_T ~ catigorial_variable, xlab = xtext,ylab = ytext, main = "Mean Plot Heart Failure Status vs Time to Treat \nwith 95% CI")
+}
+
+plot_maens(TTData$abnp2_279,TTData$hf_status)
+
+
+
+```
+
+Using a function to run statistics
+
+```{r}
+
+gnerating_p_values <-function(numerical_variable = NULL,catigorial_variable = NULL){
+  
+  catigorial_variable <- factor(catigorial_variable)
+  numerical_variable = as.numeric(unlist(numerical_variable))
+  t_test_data = t.test(numerical_variable~catigorial_variable)
+  #t_test_data
+  wilcox_test = wilcox.test(numerical_variable~catigorial_variable)
+  model <- lm(numerical_variable ~ factor(catigorial_variable), data = TTData)
+  return(wilcox_test)
+  
+}
+
+gnerating_p_values(TTData$abnp2_279,TTData$hf_status)
+
+```
+
+Working do not delete!
+```{r}
+
+stuff = list(names(TTData))
+p = NULL
+plot_list = NULL
+#master_plot_maker_cat <- function(){
+plot_list = list()
+j = 0
+for (i in 1:131) {
+    #j = j + 1
+    p = ggline(TTData, x = stuff[[1]][i], y = stuff[[1]][154],add = c("mean_se"))
+    n = p + stat_compare_means(label.y = 100,label.x = 1)
+    plot_list[[i]] = n
+}
+
+pdf("Time_to_treat_plots.pdf")
+par(mfrow=c(26,6))
+plot_list
+dev.off()
+
+# wilcox_test = wilcox.test(Y_HB_T ~ TTData$panas___6)
+# wilcox_test
+# t.test(log(Y_HB_T) ~ TTData$panas___6)
+# 
+# wilcox_test = wilcox.test(Y_HB_T ~ TTData$pches2_e4a___1)
+# 
+# p = ggline(TTData, x = stuff[[1]][2], y = stuff[[1]][154],add = c("mean_se"))
+# p + stat_compare_means(label.y = 120)
+
+
+
+```
+
+Doing the same for other sets
+abnp2_279,admhr,acreatin2_4d5,abun2_371
+
+```{r}
+stuff = list(names(TTData))
+p = NULL
+plot_list = NULL
+#master_plot_maker_cat <- function(){
+plot_list = list()
+j = 0
+for (i in 1:131) {
+    #j = j + 1
+    p = ggline(TTData, x = stuff[[1]][i], y = stuff[[1]][145],add = c("mean_se"))
+    n = p + stat_compare_means(label.y = 2,label.x = 1)
+    plot_list[[i]] = n
+}
+
+pdf("acreatin2_4d5_plots.pdf")
+par(mfrow=c(26,6))
+plot_list
+dev.off()
+```
+
+Here I am making an interaction plot that should allow me to look at more things
+```{r}
+
+percough2_1e2_3 = factor(TTData$percough2_1e2___3)
+pches2_e4a_1 = factor(TTData$pches2_e4a___1)
+interaction.plot(pches2_e4a_1,percough2_1e2_3, Y_HB_T, type = "b", col = c(1:3), leg.bty = "o", leg.bg = "beige", lwd = 2, pch = c(18,24,22), xlab = "pches2_e4a___1", ylab = "Time to Treat", main = "Interaction Plot")
+```
+
+
+```{r}
+
+hf_status <- factor(TTData$hf_status)
+Y_HB_T = as.numeric(unlist(Y_HB))
+coplot(Y_HB_T ~ hf_status | pches2_e4a_1, data = TTData,panel = panel.smooth, rows = 1)
+
+```
+
+Trying to develop a linear model to try to predict time to treat
+First I have to prepare the data
+```{r}
+#Y_HB = TTData[,154]
+#TT_cor_values <-cor(TTData[,134:154],method = "kendall")
+Rawdata = TTData[,134:154]
+betas = NULL
+rows = nrow(Rawdata)
+betas = matrix(0,nrow = rows,ncol = ncol(TTData[,134:154]))
+
+Y_HB = TTData[,154]
+outcome = as.numeric(unlist(Y_HB))
+
+for(i in 1:ncol(TTData[,134:154])){
+  betas[,i] = as.numeric(unlist(Rawdata[,i]))
+}
+
+betas = as.data.frame(betas)
+colnames(betas) = names(TTData[,134:154])
+betas
+
+
+
+
+```
+
+Now lets build a general model
+```{r}
+lmTmp = NULL
+#betas = cbind(betas,outcome)
+lmTmp <- lm(betas$`Time to Tx (min)` ~ .,data = betas)
+summary(lmTmp)
+
+VImp_lm = varImp(lmTmp, scale = FALSE)
+VImp_lm
+
+errTmp <- sqrt(mean((betas$`Time to Tx (min)` - predict(lmTmp))^2))
+errTmp
+
+#not fruitful
+lmTmp_lite <- lm(betas$`Time to Tx (min)` ~ betas$admhr + betas$admresp + betas$achlor2_945 + betas$abicarb2_60a,data = betas)
+summary(lmTmp_lite)
+lmTmp_abicarb2 = lm(betas$`Time to Tx (min)` ~ betas$abicarb2_60a,data = betas)
+summary(lmTmp_abicarb2)
+
+plot(y = betas$`Time to Tx (min)`, x = log(betas$abicarb2_60a))
+abline(lmTmp_abicarb2,col = "red")
+```
+
+```{r Subset selction}
+
+
+#*********************************
+# Subset selction and ranking
+#*********************************
+#Running regsubsets on the dataset to get a sense for what methods contribute most
+summaryMetrics <- NULL
+whichAll <- list()
+
+  for ( myMthd in c("exhaustive", "backward", "forward") ) {
+    #lmTmp <- lm(betas$`Time to Tx (min)` ~ .,data = betas)
+    rsRes <- regsubsets(betas$`Time to Tx (min)` ~.,betas,method=myMthd,nvmax=ncol(betas))
+    summRes <- summary(rsRes)
+    whichAll[[myMthd]] <- summRes$which
+    for ( metricName in c("rsq","rss","adjr2","cp","bic") ) {
+      summaryMetrics <- rbind(summaryMetrics,
+        data.frame(method=myMthd,metric=metricName,
+                  nvars=1:length(summRes[[metricName]]),
+                  value=summRes[[metricName]]))
+    }
+  }
+
+ggplot(summaryMetrics,aes(x=nvars,y=value,shape=method,colour=method)) + geom_path() + geom_point() + facet_wrap(~metric,scales="free",ncol=5) +   theme(legend.position="top")
+
+
+
+
+old.par <- par(mfrow=c(1,3),ps=16,mar=c(5,12,5,1))
+
+  for ( myMthd in names(whichAll) ) {
+    image(1:nrow(whichAll[[myMthd]]),
+          1:ncol(whichAll[[myMthd]]),
+          whichAll[[myMthd]],xlab="N(vars)",ylab="",
+          xaxt="n",yaxt="n",breaks=c(-0.5,0.5,1.5),
+          col=c("white","gray"),main=paste(myMthd))
+    axis(1,1:nrow(whichAll[[myMthd]]),rownames(whichAll[[myMthd]]))
+    axis(2,1:ncol(whichAll[[myMthd]]),colnames(whichAll[[myMthd]]),las=2)
+  }
+par(old.par)
+
+#*********************************
+# Subset selction and ranking
+#*********************************
+
+
+
+```
+
+```{r}
+
+#TTData[,134:154]
+#here we are computing PCA
+prcompTmp <- prcomp(TTData[,134:154],center = TRUE,scale. = TRUE)
+
+#Here we have a plot of the variance by principle componant
+plot(prcompTmp)
+
+fviz_eig(prcompTmp, addlabels=TRUE, ylim=c(0,60), geom = c("bar", "line"), barfill = "gold", barcolor="grey",linecolor = "red", ncp=10)+
+labs(title = "Cancer All Variances - PCA",
+         x = "Principal Components", y = "% of variances")
+
+fviz_pca_biplot(prcompTmp, col.ind = TTData$`90 min cut-off`, col="black",
+                palette = "jco", geom = "point", repel=TRUE,
+                legend.title="0 = Benign or 1 = Malignant", addEllipses = TRUE)
+```
